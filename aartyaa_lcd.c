@@ -18,6 +18,7 @@
 
 int foo;
 int r = 0x20, y = 0xff, b = 0x0;
+int display_off;
 
 /** 1. new group */
 #define __AARTYAA_LCD_ATTR(_name, _mode, _show, _store) {		\
@@ -80,6 +81,36 @@ static ssize_t aartyaa_lcd_store_ryb(struct device *dev,
 	return count;
 }
 
+/** sysfs to make display off */
+static ssize_t aartyaa_lcd_show_display_off(struct device *dev, 
+			struct device_attribute *attr,
+                        char *buf)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	pr_debug("aartyaa_lcd_show_display_off : id = %x, name = %s\n",
+		 client->addr, client->name);
+	return sprintf(buf, "%d", display_off);
+}
+ 
+static ssize_t aartyaa_lcd_store_display_off(struct device *dev, 
+			struct device_attribute *attr,
+                        const char *buf, size_t count)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	pr_debug("aartyaa_lcd_show_display_off : id = %x, name = %s\n",
+		 client->addr, client->name);
+
+	sscanf(buf, "%d", &display_off);
+	pr_debug("aartyaa_lcd_store : display_off = %d", display_off);
+
+	if(display_off) {
+		aartyaa_lcd_write_bytes(client, 4, 0);
+		aartyaa_lcd_write_bytes(client, 3, 0);
+		aartyaa_lcd_write_bytes(client, 2, 0);
+	}	
+	return count;
+}
+
 /** sysfs to change colour of display */
 static ssize_t aartyaa_lcd_show(struct device *dev, 
 			struct device_attribute *attr,
@@ -135,10 +166,22 @@ struct device_attribute aartyaa_lcd_attribute_lcd_display = {
         .store  = aartyaa_lcd_store,                                               
 };
 
+/** 4. actual thing */
+struct device_attribute aartyaa_lcd_attribute_lcd_display_off = {
+	.attr = {
+		.name = "lcd_display_off",                            
+		.mode = VERIFY_OCTAL_PERMISSIONS(0664),
+	},             
+        .show   = aartyaa_lcd_show_display_off,                                                
+        .store  = aartyaa_lcd_store_display_off,                                               
+};
+
+
 static struct attribute *aartyaa_lcd_attrs[] = {
 	&aartyaa_lcd_attribute_lcd_rbg.attr,	
 	&aartyaa_lcd_attribute_lcd_on.attr,
 	&aartyaa_lcd_attribute_lcd_display.attr,	
+	&aartyaa_lcd_attribute_lcd_display_off.attr,	
 	NULL,
 };
 
@@ -155,12 +198,15 @@ static int init_lcd(struct aartyaa_lcd_data *t_lcd_data)
 			t_lcd_data->i2c_client->addr); 
 
 	mutex_lock(&t_lcd_data->mutex_lock);	
+
 	command_response |= (aartyaa_lcd_write_bytes(t_lcd_data->i2c_client, 0, 0) << 0);
 	command_response |= (aartyaa_lcd_write_bytes(t_lcd_data->i2c_client, 1, 0) << 1);
 	command_response |= (aartyaa_lcd_write_bytes(t_lcd_data->i2c_client, 8, 0xaa) << 2);
+#if 0
 	command_response |= (aartyaa_lcd_write_bytes(t_lcd_data->i2c_client, 4, r) << 3);
 	command_response |= (aartyaa_lcd_write_bytes(t_lcd_data->i2c_client, 3, y) << 4);
 	command_response |= (aartyaa_lcd_write_bytes(t_lcd_data->i2c_client, 2, b) << 5);
+#endif
 	mutex_unlock(&t_lcd_data->mutex_lock);	
 	
 	pr_debug("command_response = %x\n", command_response);
