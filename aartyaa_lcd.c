@@ -82,7 +82,7 @@ static ssize_t aartyaa_lcd_store_ryb(struct device *dev,
 }
 
 /** sysfs to make display off */
-static ssize_t aartyaa_lcd_show_display_off(struct device *dev, 
+static ssize_t aartyaa_lcd_show_display_on_off(struct device *dev, 
 			struct device_attribute *attr,
                         char *buf)
 {
@@ -92,7 +92,7 @@ static ssize_t aartyaa_lcd_show_display_off(struct device *dev,
 	return sprintf(buf, "%d", display_off);
 }
  
-static ssize_t aartyaa_lcd_store_display_off(struct device *dev, 
+static ssize_t aartyaa_lcd_store_display_on_off(struct device *dev, 
 			struct device_attribute *attr,
                         const char *buf, size_t count)
 {
@@ -103,11 +103,15 @@ static ssize_t aartyaa_lcd_store_display_off(struct device *dev,
 	sscanf(buf, "%d", &display_off);
 	pr_debug("aartyaa_lcd_store : display_off = %d", display_off);
 
-	if(display_off) {
+	if(!display_off) {
 		aartyaa_lcd_write_bytes(client, 4, 0);
 		aartyaa_lcd_write_bytes(client, 3, 0);
 		aartyaa_lcd_write_bytes(client, 2, 0);
-	}	
+	} else {	
+		aartyaa_lcd_write_bytes(client, 4, r);
+		aartyaa_lcd_write_bytes(client, 3, y);
+		aartyaa_lcd_write_bytes(client, 2, b);
+	}
 	return count;
 }
 
@@ -167,13 +171,13 @@ struct device_attribute aartyaa_lcd_attribute_lcd_display = {
 };
 
 /** 4. actual thing */
-struct device_attribute aartyaa_lcd_attribute_lcd_display_off = {
+struct device_attribute aartyaa_lcd_attribute_lcd_display_on_off = {
 	.attr = {
-		.name = "lcd_display_off",                            
+		.name = "lcd_display_on_off",                            
 		.mode = VERIFY_OCTAL_PERMISSIONS(0664),
 	},             
-        .show   = aartyaa_lcd_show_display_off,                                                
-        .store  = aartyaa_lcd_store_display_off,                                               
+        .show   = aartyaa_lcd_show_display_on_off,                                                
+        .store  = aartyaa_lcd_store_display_on_off,                                               
 };
 
 
@@ -181,7 +185,7 @@ static struct attribute *aartyaa_lcd_attrs[] = {
 	&aartyaa_lcd_attribute_lcd_rbg.attr,	
 	&aartyaa_lcd_attribute_lcd_on.attr,
 	&aartyaa_lcd_attribute_lcd_display.attr,	
-	&aartyaa_lcd_attribute_lcd_display_off.attr,	
+	&aartyaa_lcd_attribute_lcd_display_on_off.attr,	
 	NULL,
 };
 
