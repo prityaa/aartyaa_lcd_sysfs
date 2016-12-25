@@ -1,0 +1,9 @@
+#
+compilation : make
+
+#
+to set lcd color echo r y b > lcd_ryb in /sys/bus/i2c/devices/1-0062/
+
+#
+
+
