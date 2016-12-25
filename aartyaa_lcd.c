@@ -96,13 +96,17 @@ static ssize_t aartyaa_lcd_store_display_on_off(struct device *dev,
 			struct device_attribute *attr,
                         const char *buf, size_t count)
 {
-	struct i2c_client *client = to_i2c_client(dev);
+	// struct i2c_client *client = to_i2c_client(dev);
+        struct aartyaa_lcd_data *data = dev_get_drvdata(dev);
+	struct i2c_client *client = data->i2c_client;
+
 	pr_debug("aartyaa_lcd_show_display_off : id = %x, name = %s\n",
 		 client->addr, client->name);
 
 	sscanf(buf, "%d", &display_off);
-	pr_debug("aartyaa_lcd_store : display_off = %d", display_off);
+	pr_debug("aartyaa_lcd_store : using driver data display_off = %d", display_off);
 
+	mutex_lock(&data->mutex_lock);
 	if(!display_off) {
 		aartyaa_lcd_write_bytes(client, 4, 0);
 		aartyaa_lcd_write_bytes(client, 3, 0);
@@ -112,6 +116,7 @@ static ssize_t aartyaa_lcd_store_display_on_off(struct device *dev,
 		aartyaa_lcd_write_bytes(client, 3, y);
 		aartyaa_lcd_write_bytes(client, 2, b);
 	}
+	mutex_unlock(&data->mutex_lock);
 	return count;
 }
 
@@ -136,6 +141,7 @@ static ssize_t aartyaa_lcd_store(struct device *dev,
 
 	return count;
 }
+
 #if 0		    
 static int aartyaa_lcd_detect(struct i2c_client *i2c_client, 
 			struct i2c_board_info *board_info)
@@ -202,20 +208,13 @@ static int init_lcd(struct aartyaa_lcd_data *t_lcd_data)
 			t_lcd_data->i2c_client->addr); 
 
 	mutex_lock(&t_lcd_data->mutex_lock);	
-
 	command_response |= (aartyaa_lcd_write_bytes(t_lcd_data->i2c_client, 0, 0) << 0);
 	command_response |= (aartyaa_lcd_write_bytes(t_lcd_data->i2c_client, 1, 0) << 1);
 	command_response |= (aartyaa_lcd_write_bytes(t_lcd_data->i2c_client, 8, 0xaa) << 2);
-#if 0
-	command_response |= (aartyaa_lcd_write_bytes(t_lcd_data->i2c_client, 4, r) << 3);
-	command_response |= (aartyaa_lcd_write_bytes(t_lcd_data->i2c_client, 3, y) << 4);
-	command_response |= (aartyaa_lcd_write_bytes(t_lcd_data->i2c_client, 2, b) << 5);
-#endif
 	mutex_unlock(&t_lcd_data->mutex_lock);	
 	
 	pr_debug("command_response = %x\n", command_response);
 	return command_response;
-
 }
 
 static int aartyaa_lcd_probe(struct i2c_client *i2c_client, 
@@ -241,7 +240,8 @@ static int aartyaa_lcd_probe(struct i2c_client *i2c_client,
 		return -ENOMEM;
 	
 	lcd_data->i2c_client = i2c_client;
-	i2c_set_clientdata(i2c_client, lcd_data);
+	//i2c_set_clientdata(i2c_client, lcd_data);
+	dev_set_drvdata(&i2c_client->dev, lcd_data);
 	mutex_init(&lcd_data->mutex_lock);
 	
 	if (init_lcd(lcd_data) ) {
@@ -252,14 +252,19 @@ static int aartyaa_lcd_probe(struct i2c_client *i2c_client,
 	}	
 
 	sysfs_create_group(&dev->kobj, &aartyaa_lcd_attribute_group);
+	dev_dbg(&i2c_client->adapter->dev, "aartyaa_lcd init succeccful\n");
 	return ret;
 }
 
 static int  aartyaa_lcd_remove(struct i2c_client *client)
 {
+	
+	//struct aartyaa_lcd_data *data = dev_get_drvdata(&client->dev);
 
-		pr_debug("aartyaa_lcd_remove : calling remove\n");
-		sysfs_remove_group(&client->dev.kobj, &aartyaa_lcd_attribute_group);
+	pr_debug("aartyaa_lcd_remove : calling remove\n");
+	//device_unregister(data->device);
+	sysfs_remove_group(&client->dev.kobj, &aartyaa_lcd_attribute_group);
+	printk(KERN_INFO "aartyaa_lcd device removed\n");
 	return 0;
 }
 
