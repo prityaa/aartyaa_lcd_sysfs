@@ -16,6 +16,8 @@
 #include <linux/uaccess.h>
 #include <linux/of.h>
 
+#include <linux/aartyaa_lcd.h>
+
 int foo;
 int r = 0x20, y = 0xff, b = 0x0;
 int display_off;
@@ -81,7 +83,7 @@ static ssize_t aartyaa_lcd_store_ryb(struct device *dev,
 	return count;
 }
 
-/** sysfs to make display off */
+/** sysfs to make display on and off */
 static ssize_t aartyaa_lcd_show_display_on_off(struct device *dev, 
 			struct device_attribute *attr,
                         char *buf)
@@ -142,6 +144,35 @@ static ssize_t aartyaa_lcd_store(struct device *dev,
 	return count;
 }
 
+/** sysfs to change text  display */
+static ssize_t aartyaa_lcd_show_text(struct device *dev, 
+			struct device_attribute *attr,
+                        char *buf)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct aartyaa_lcd_platform_data *aartyaa_pdata = client->dev.platform_data;
+	
+	pr_debug("aartyaa_lcd_show_text : id = %x, name = %s\n",
+		 client->addr, client->name);
+
+	pr_debug("aartyaa_lcd_show_text : aartyaa_pdata display addr = %x\n",
+			aartyaa_pdata->display_text_addr);
+
+	return sprintf(buf, "%02x%02x%02x", r,y,b);
+}
+ 
+static ssize_t aartyaa_lcd_store_text(struct device *dev, 
+			struct device_attribute *attr,
+                        const char *buf, size_t count)
+{
+	sscanf(buf, "%02x%02x%02x", &r, &y, &b);
+	pr_debug("aartyaa_lcd_store_text : ryb= %x, %x, %x\n", 
+		r, y, b);
+
+	return count;
+}
+
+
 #if 0		    
 static int aartyaa_lcd_detect(struct i2c_client *i2c_client, 
 			struct i2c_board_info *board_info)
@@ -167,13 +198,13 @@ struct device_attribute aartyaa_lcd_attribute_lcd_rbg =
 	__AARTYAA_LCD_ATTR(lcd_rbg, 0664, aartyaa_lcd_show_ryb, aartyaa_lcd_store_ryb);
 
 /** 3. actual thing */
-struct device_attribute aartyaa_lcd_attribute_lcd_display = {
+struct device_attribute aartyaa_lcd_attribute_lcd_text = {
 	.attr = {
-		.name = "lcd_display",                            
-		.mode = VERIFY_OCTAL_PERMISSIONS(S_IRUGO),
+		.name = "lcd_text",                            
+		.mode = VERIFY_OCTAL_PERMISSIONS(0664),
 	},             
-        .show   = aartyaa_lcd_show,                                                
-        .store  = aartyaa_lcd_store,                                               
+        .show   = aartyaa_lcd_show_text,                                                
+        .store  = aartyaa_lcd_store_text,                                               
 };
 
 /** 4. actual thing */
@@ -190,7 +221,7 @@ struct device_attribute aartyaa_lcd_attribute_lcd_display_on_off = {
 static struct attribute *aartyaa_lcd_attrs[] = {
 	&aartyaa_lcd_attribute_lcd_rbg.attr,	
 	&aartyaa_lcd_attribute_lcd_on.attr,
-	&aartyaa_lcd_attribute_lcd_display.attr,	
+	&aartyaa_lcd_attribute_lcd_text.attr,	
 	&aartyaa_lcd_attribute_lcd_display_on_off.attr,	
 	NULL,
 };

@@ -64,6 +64,7 @@
 #include "armctrl.h"
 
 #include <linux/led_blink.h>
+#include <linux/aartyaa_lcd.h>
 
 #ifdef CONFIG_BCM_VC_CMA
 #include <linux/broadcom/vc_cma.h>
@@ -756,16 +757,25 @@ static struct i2c_board_info __initdata snd_pcm512x_i2c_devices[] = {
 #endif
 
 /** aaryaa i2c lcd struct */
+
+static struct  aartyaa_lcd_platform_data aartyaa_lcd_pdata = {
+	.display_text_addr = 0x3e,
+};
+
+/* for core platform data */
 static struct platform_device aartyaa_lcd_device = {
 	.name = "aartyaa_lcd",
 	.id = 0,
 	.num_resources = 0,
+	// .dev.platform_data = &aartyaa_lcd_pdata,
 };	
 
+/* platform data passed in client to driver*/ 
 static struct i2c_board_info __initdata aartyaa_lcd_i2c_devices[] = {
 	{
 		.type = "aartyaa_lcd",
 		.addr = 0x62,
+		.platform_data = &aartyaa_lcd_pdata,
 	},
 };
 
@@ -938,6 +948,7 @@ void __init bcm2708_init(void)
 	bcm_register_device_dt(&bcm2708_gpio_device);
 #endif
 
+#if 1 
 	printk("led_blink_device \n");
 	bcm_register_device_dt(&led_blink_device);
 
@@ -1019,7 +1030,7 @@ void __init bcm2708_init(void)
         i2c_register_board_info_dt(1, snd_pcm512x_i2c_devices, ARRAY_SIZE(snd_pcm512x_i2c_devices));
 #endif
 
-	
+#endif	
 	
 	if (!use_dt) {
 		for (i = 0; i < ARRAY_SIZE(amba_devs); i++) {
@@ -1040,9 +1051,9 @@ void __init bcm2708_init(void)
 	printk(KERN_INFO "aartyaa : board file registering i2c lcd device use_dt = %d\n", use_dt);
 	use_dt = 0;
 	bcm_register_device_dt(&aartyaa_lcd_device);
+	//use_dt = 1;
 	printk("bcm2708_init : aartyaa calling register boad info\n");
 	i2c_register_board_info_dt(1, aartyaa_lcd_i2c_devices, ARRAY_SIZE(aartyaa_lcd_i2c_devices));
-	use_dt = 1;
 }
 
 static void timer_set_mode(enum clock_event_mode mode,

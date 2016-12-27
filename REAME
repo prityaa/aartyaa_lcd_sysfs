@@ -5,5 +5,41 @@ compilation : make
 to set lcd color echo r y b > lcd_ryb in /sys/bus/i2c/devices/1-0062/
 
 #
+in board file
+/* for core platform data */
+static struct platform_device aartyaa_lcd_device = {
+        .name = "aartyaa_lcd",
+        .id = 0,
+        .num_resources = 0,
+        // .dev.platform_data = &aartyaa_lcd_pdata,
+};
 
+/* platform data passed in client to driver*/
+static struct i2c_board_info __initdata aartyaa_lcd_i2c_devices[] = {
+        {
+                .type = "aartyaa_lcd",
+                .addr = 0x62,
+                .platform_data = &aartyaa_lcd_pdata,
+        },
+};
+
+#
+and in driver
+
+/** sysfs to change text  display */
+static ssize_t aartyaa_lcd_show_text(struct device *dev,
+                        struct device_attribute *attr,
+                        char *buf)
+{
+        struct i2c_client *client = to_i2c_client(dev);
+        struct aartyaa_lcd_platform_data *aartyaa_pdata = client->dev.platform_data;
+
+        pr_debug("aartyaa_lcd_show_text : id = %x, name = %s\n",
+                 client->addr, client->name);
+
+        pr_debug("aartyaa_lcd_show_text : aartyaa_pdata display addr = %x\n",
+                        aartyaa_pdata->display_text_addr);
+
+        return sprintf(buf, "%02x%02x%02x", r,y,b);
+}
 
