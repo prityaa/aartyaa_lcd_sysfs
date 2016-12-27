@@ -15,12 +15,13 @@
 #include <linux/init.h>
 #include <linux/uaccess.h>
 #include <linux/of.h>
-
+#include <linux/delay.h>
 #include <linux/aartyaa_lcd.h>
 
 int foo;
 int r = 0x20, y = 0xff, b = 0x0;
 int display_off;
+int display_addr;
 
 /** 1. new group */
 #define __AARTYAA_LCD_ATTR(_name, _mode, _show, _store) {		\
@@ -38,6 +39,39 @@ struct aartyaa_lcd_data
 	struct device *device;
 	struct mutex mutex_lock;
 };
+
+/** write a text to lcd */
+static int aartyaa_lcd_write_text(const struct i2c_client  *t_client,
+			const char *text_msg,
+                        int msg_len)
+{
+        int flags = 0, read_write = 0, size = 2, i = 0;
+        union i2c_smbus_data temp;
+
+        pr_debug("aartyaa_lcd_write_text : addr = %x, flags = %x, read_write = %x, size = %x, temp = %x\n",
+                display_addr, flags, read_write,  size, temp.byte);
+
+        temp.byte = 1;
+        i2c_smbus_xfer(t_client->adapter, display_addr,
+                       flags, read_write, 0x80, size, &temp);
+	msleep(50);
+
+        temp.byte = 0x8 | 0X4;
+        i2c_smbus_xfer(t_client->adapter, display_addr,
+                       flags, read_write, 0x80, size, &temp);
+
+        temp.byte = 28;
+        i2c_smbus_xfer(t_client->adapter, display_addr,
+                       flags, read_write, 0x80, size, &temp);
+        
+	msleep(50);
+	for (; i < msg_len; i++) {
+		temp.byte = text_msg[i];
+	        i2c_smbus_xfer(t_client->adapter, display_addr,
+                       flags, read_write, 0x40, size, &temp);
+	}
+	return 0;
+}
 
 /** write a byte to lcd */
 static int aartyaa_lcd_write_bytes(const struct i2c_client  *t_client, 
@@ -152,6 +186,8 @@ static ssize_t aartyaa_lcd_show_text(struct device *dev,
 	struct i2c_client *client = to_i2c_client(dev);
 	struct aartyaa_lcd_platform_data *aartyaa_pdata = client->dev.platform_data;
 	
+	display_addr = aartyaa_pdata->display_text_addr;
+
 	pr_debug("aartyaa_lcd_show_text : id = %x, name = %s\n",
 		 client->addr, client->name);
 
@@ -165,10 +201,20 @@ static ssize_t aartyaa_lcd_store_text(struct device *dev,
 			struct device_attribute *attr,
                         const char *buf, size_t count)
 {
-	sscanf(buf, "%02x%02x%02x", &r, &y, &b);
-	pr_debug("aartyaa_lcd_store_text : ryb= %x, %x, %x\n", 
-		r, y, b);
+	char text_to_lcd[1024];
+	struct i2c_client *client = to_i2c_client(dev);
+        struct aartyaa_lcd_platform_data *aartyaa_pdata = client->dev.platform_data;
 
+        display_addr = aartyaa_pdata->display_text_addr;
+        pr_debug("aartyaa_lcd_show_text : id = %x, name = %s\n",
+                 client->addr, client->name);
+        pr_debug("aartyaa_lcd_show_text : aartyaa_pdata display addr = %x\n",
+                        aartyaa_pdata->display_text_addr);
+
+	memset(text_to_lcd, '\0', sizeof(text_to_lcd));
+	sscanf(buf, "%s", text_to_lcd);
+	
+	aartyaa_lcd_write_text(client, text_to_lcd, sizeof(text_to_lcd));
 	return count;
 }
 
