@@ -1040,9 +1040,9 @@ void __init bcm2708_init(void)
 	printk(KERN_INFO "aartyaa : board file registering i2c lcd device use_dt = %d\n", use_dt);
 	use_dt = 0;
 	bcm_register_device_dt(&aartyaa_lcd_device);
-	use_dt = 1;
 	printk("bcm2708_init : aartyaa calling register boad info\n");
 	i2c_register_board_info_dt(1, aartyaa_lcd_i2c_devices, ARRAY_SIZE(aartyaa_lcd_i2c_devices));
+	use_dt = 1;
 }
 
 static void timer_set_mode(enum clock_event_mode mode,
