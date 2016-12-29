@@ -43,3 +43,7 @@ static ssize_t aartyaa_lcd_show_text(struct device *dev,
         return sprintf(buf, "%02x%02x%02x", r,y,b);
 }
 
+#
+put header file in include/linux
+
+
