@@ -46,4 +46,34 @@ static ssize_t aartyaa_lcd_show_text(struct device *dev,
 #
 put header file in include/linux
 
+----------------------------------------------------------------
 
+READ and write operations
+------------------------------------------------------------
+i2c_smbus_xfer
+	__i2c_smbus_xfer - drivers/i2c/i2c-core-smbus.c
+		adapter->algo->smbus_xfer - drivers/i2c/i2c-core-smbus.c
+		.smbus_xfer     = stub_xfer - drivers/i2c/i2c-stub.c
+
+
+	i2c_smbus_xfer_emulated - drivers/i2c/i2c-core-smbus.c
+		__i2c_transfer	- drivers/i2c/i2c-core-base.c
+			adap->algo->master_xfer -
+
+		.master_xfer    = bcm2835_i2c_xfer,
+
+		bcm2835_i2c_xfer - drivers/i2c/busses/i2c-bcm2835.c
+			bcm2835_i2c_set_divider
+			bcm2835_i2c_start_transfer
+
+			wait_for_completion_timeout
+
+				this waits till we get i/r
+				and 'complete' is called by
+				bcm2835_i2c_isr 				 this ISR
+
+			bcm2835_i2c_writel
+
+
+
+			bcm2835_i2c_isr
