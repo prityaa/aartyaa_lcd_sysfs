@@ -77,3 +77,17 @@ i2c_smbus_xfer
 
 
 			bcm2835_i2c_isr
+
+
+
+reference :
+basic https://embedjournal.com/two-wire-interface-i2c-protocol-in-a-nut-shell/
+userland : https://elinux.org/Interfacing_with_I2C_Devices
+http://opensourceforu.com/2015/01/writing-i2c-clients-in-linux/
+https://learnlinuxconcepts.blogspot.com/2014/10/i2c-protocol.html
+
+linux client driver : http://renjucnair.blogspot.com/2012/01/writing-i2c-client-driver.html
+		      https://www.kernel.org/doc/Documentation/i2c/writing-clients
+
+https://opensourceforu.com/2015/01/writing-i2c-clients-in-linux/
+
